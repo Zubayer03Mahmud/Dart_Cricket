@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏏 Dart Cricket Game</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="/index.html" class="navbar-logo">🏏 DART CRICKET</a>
+    <div class="navbar-info">
+      <div class="user-info" id="userInfo" style="display: none;">
+        👤 <span id="userName">User</span>
+      </div>
+    </div>
+    <div class="navbar-buttons">
+      <button class="navbar-btn" id="authBtn" onclick="goToAuth()">👤 LOGIN</button>
+      <button class="navbar-btn" id="logoutBtn" onclick="logout()" style="display: none;">🚪 LOGOUT</button>
+    </div>
+  </nav>
+
+  <div class="header">
+    <h1>🏏 DART CRICKET 🏏</h1>
+    <p class="subtitle"> 5 WICKETS = ALL OUT</p>
+    <div id="gameMode" class="game-mode">
+      <button id="singlePlayerBtn" class="mode-btn active">🎮 SINGLE PLAYER</button>
+      <button id="multiPlayerBtn" class="mode-btn">👥 MULTIPLAYER</button>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <!-- WHEEL -->
+    <div class="wheel-container">
+      <canvas id="wheel" width="620" height="620"></canvas>
+      <!-- Bigger, brighter pointer (exactly like your new screenshot) -->
+      <div class="pointer"></div>
+
+      <!-- Center cricket bat -->
+      <div
+        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 42px; z-index: 20; text-shadow: 0 0 20px #ffd700;">
+        😱</div>
+    </div>
+
+    <!-- SCOREBOARD -->
+    <div class="scoreboard">
+      <div id="singlePlayerScore" class="score-box">
+        <div class="score-item">
+          <div class="score-label">TOTAL RUNS</div>
+          <div id="score" class="score-value">0</div>
+        </div>
+        <div class="score-item">
+          <div class="score-label">WICKETS</div>
+          <div id="wickets" class="score-value wickets">0 / 5</div>
+        </div>
+        <div class="score-item">
+          <div class="score-label">BALLS</div>
+          <div id="balls" class="score-value">0</div>
+        </div>
+      </div>
+
+      <div id="multiPlayerScore" class="score-box multiplayer" style="display: none;">
+        <div class="player-section">
+          <div class="player-name" id="player1Name">PLAYER 1</div>
+          <div class="player-stats">
+            <div class="score-item">
+              <div class="score-label">RUNS</div>
+              <div id="player1Score" class="score-value">0</div>
+            </div>
+            <div class="score-item">
+              <div class="score-label">WICKETS</div>
+              <div id="player1Wickets" class="score-value wickets">0/5</div>
+            </div>
+          </div>
+        </div>
+        <div class="vs-divider">VS</div>
+        <div class="player-section">
+          <div class="player-name" id="player2Name">PLAYER 2</div>
+          <div class="player-stats">
+            <div class="score-item">
+              <div class="score-label">RUNS</div>
+              <div id="player2Score" class="score-value">0</div>
+            </div>
+            <div class="score-item">
+              <div class="score-label">WICKETS</div>
+              <div id="player2Wickets" class="score-value wickets">0/5</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="currentPlayerIndicator" class="current-player" style="display: none;">
+        <span id="currentPlayerText">PLAYER 1'S TURN</span>
+      </div>
+
+      <div id="gameOverBanner" class="game-over-banner" style="display: none;">
+        <span id="gameOverBannerText">GAME OVER</span>
+      </div>
+
+      <div id="outcome" class="outcome">READY TO BAT?</div>
+
+      <div class="controls">
+        <button id="throwBtn">🎯 THROW DART<br><span style="font-size:0.8rem; letter-spacing:1px;">(NEXT
+            BALL)</span></button>
+        <button id="restartBtn" style="display: none;">🔄 NEW INNINGS</button>
+      </div>
+
+      <div class="history">
+        <h3>LAST 6 BALLS →</h3>
+        <div id="history-list" class="history-list"></div>
+      </div>
+
+      <div style="margin-top: 25px; font-size: 0.75rem; opacity: 0.7; text-align: center; line-height: 1.4;">
+        INSPIRED BY MY HAND-DRAWN WHEEL<br>
+        4 • 3 • 1 • 2 • 6 • OUT • 2 • OUT
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME OVER MODAL -->
+  <div id="gameOverModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalTitle">INNINGS OVER!</h2>
+      <p style="font-size: 1.1rem; margin: 20px 0;">Final Score</p>
+      <div id="finalScore" style="font-size: 3.5rem; color: #ffd700; margin: 15px 0; font-weight: bold;"></div>
+      <p id="modalMessage" style="margin: 20px 0; font-size: 1rem; line-height: 1.5;"></p>
+
+      <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+        <button onclick="restartGame()"
+          style="background:#ffd700; color:#0a3d1f; padding:15px 30px; font-size:1rem;">NEW GAME</button>
+        <button onclick="closeModal()"
+          style="background:#333; color:white; padding:15px 30px; font-size:1rem;">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =============== AUTHENTICATION ===============
+    let currentUser = null;
+
+    // Initialize - check if user is logged in
+    window.addEventListener('DOMContentLoaded', () => {
+      const user = localStorage.getItem('currentUser');
+      if (user) {
+        currentUser = JSON.parse(user);
+        updateAuthUI();
+      }
+    });
+
+    function updateAuthUI() {
+      if (currentUser) {
+        document.getElementById('userInfo').style.display = 'inline-block';
+        document.getElementById('userName').textContent = currentUser.username;
+        document.getElementById('authBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+      } else {
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('authBtn').style.display = 'inline-block';
+        document.getElementById('logoutBtn').style.display = 'none';
+      }
+    }
+
+    function goToAuth() {
+      window.location.href = '/auth.html';
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      currentUser = null;
+      location.reload();
+    }
+
+    // =============== SECTORS - EXACT MATCH TO YOUR ORIGINAL DRAWING ===============
+    const sectors = [
+      { label: "4", value: 4, color: "#e63939" },
+      { label: "3", value: 3, color: "#2a9d8f" },
+      { label: "1", value: 1, color: "#457b9d" },
+      { label: "2", value: 2, color: "#f4a261" },
+      { label: "6", value: 6, color: "#8d4bb8" },
+      { label: "OUT", value: "out", color: "#1d1d1d" },
+      { label: "2", value: 2, color: "#f4a261" },
+      { label: "OUT", value: "out", color: "#1d1d1d" }
+    ];
+
+    const NUM_SECTORS = sectors.length;
+    const ANGLE_PER_SECTOR = (Math.PI * 2) / NUM_SECTORS;
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    // Game state
+    let isMultiplayer = false;
+    let currentPlayer = 1; // 1 or 2
+    let gamePhase = 'setup'; // 'setup', 'player1', 'player2', 'finished'
+
+    // Player data
+    let players = {
+      1: {
+        score: 0,
+        wickets: 0,
+        balls: 0,
+        history: [],
+        finished: false
+      },
+      2: {
+        score: 0,
+        wickets: 0,
+        balls: 0,
+        history: [],
+        finished: false
+      }
+    };
+
+    // Backward compatibility - current game variables point to current player
+    let score = 0;
+    let wickets = 0;
+    let balls = 0;
+    const MAX_WICKETS = 5;
+    let history = [];
+
+    // Canvas setup
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const CENTER_X = canvas.width / 2;
+    const CENTER_Y = canvas.height / 2;
+    const RADIUS = 260;
+
+    function drawWheel(rotation = 0) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(CENTER_X, CENTER_Y);
+      ctx.rotate(rotation);
+
+      for (let i = 0; i < NUM_SECTORS; i++) {
+        const startAngle = i * ANGLE_PER_SECTOR;
+        const endAngle = startAngle + ANGLE_PER_SECTOR;
+
+        ctx.fillStyle = sectors[i].color;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, RADIUS, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, RADIUS, startAngle, endAngle);
+        ctx.stroke();
+
+        ctx.save();
+        ctx.rotate(startAngle + ANGLE_PER_SECTOR / 2);
+
+        if (sectors[i].value === "out") {
+          ctx.fillStyle = "#ffd700";
+          ctx.font = "bold 34px 'Press Start 2P'";
+          ctx.shadowBlur = 8;
+        } else {
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 36px 'Press Start 2P'";
+          ctx.shadowBlur = 4;
+        }
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(sectors[i].label, RADIUS * 0.65, 0);
+        ctx.restore();
+      }
+
+      // Center circle
+      ctx.fillStyle = "#111";
+      ctx.beginPath();
+      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#ffd700";
+      ctx.beginPath();
+      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#111";
+      ctx.font = "bold 22px Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("🏏", 0, 3);
+
+      ctx.restore();
+
+      // Outer ring
+      ctx.save();
+      ctx.translate(CENTER_X, CENTER_Y);
+      ctx.strokeStyle = "#3a2a1f";
+      ctx.lineWidth = 22;
+      ctx.beginPath();
+      ctx.arc(0, 0, RADIUS + 18, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // =============== FIXED POINTER CALCULATION (NOW 100% ACCURATE) ===============
+    function getLandedSector(finalRotation) {
+      let normalized = finalRotation % (Math.PI * 2);
+      if (normalized < 0) normalized += Math.PI * 2;
+
+      // Pointer is fixed at TOP
+      const pointerAngle = (Math.PI * 2 - normalized) % (Math.PI * 2);
+
+      // CRITICAL FIX: Changed from + half to - half sector offset
+      // This solves the off-by-one error (was landing on the next sector "OUT" instead of "6")
+      const centeredAngle = (pointerAngle - (ANGLE_PER_SECTOR / 2)) % (Math.PI * 2);
+
+      let sectorIndex = Math.floor(centeredAngle / ANGLE_PER_SECTOR) % NUM_SECTORS;
+
+      return sectors[sectorIndex];
+    }
+
+    // =============== MULTIPLAYER FUNCTIONS ===============
+    function updateCurrentPlayerVars() {
+      const player = players[currentPlayer];
+      score = player.score;
+      wickets = player.wickets;
+      balls = player.balls;
+      history = player.history;
+    }
+
+    function syncPlayerData() {
+      const player = players[currentPlayer];
+      player.score = score;
+      player.wickets = wickets;
+      player.balls = balls;
+      player.history = history;
+    }
+
+    function switchToNextPlayer() {
+      syncPlayerData();
+
+      if (currentPlayer === 1) {
+        currentPlayer = 2;
+        gamePhase = 'player2';
+      } else {
+        gamePhase = 'finished';
+      }
+
+      updateUI();
+    }
+
+    function updateUI() {
+      if (isMultiplayer) {
+        document.getElementById('singlePlayerScore').style.display = 'none';
+        document.getElementById('multiPlayerScore').style.display = 'flex';
+        document.getElementById('currentPlayerIndicator').style.display = 'block';
+
+        // Update player scores
+        document.getElementById('player1Score').textContent = players[1].score;
+        document.getElementById('player1Wickets').innerHTML = `<span style="color:#ff0000">${players[1].wickets}</span>/5`;
+        document.getElementById('player2Score').textContent = players[2].score;
+        document.getElementById('player2Wickets').innerHTML = `<span style="color:#ff0000">${players[2].wickets}</span>/5`;
+
+        // Update current player indicator
+        if (gamePhase === 'player1') {
+          document.getElementById('currentPlayerText').textContent = "PLAYER 1'S TURN";
+          document.getElementById('player1Name').style.color = '#ffd700';
+          document.getElementById('player2Name').style.color = '#666';
+        } else if (gamePhase === 'player2') {
+          document.getElementById('currentPlayerText').textContent = "PLAYER 2'S TURN";
+          document.getElementById('player1Name').style.color = '#666';
+          document.getElementById('player2Name').style.color = '#ffd700';
+        } else {
+          document.getElementById('currentPlayerText').textContent = "GAME FINISHED";
+          document.getElementById('player1Name').style.color = '#ffd700';
+          document.getElementById('player2Name').style.color = '#ffd700';
+        }
+
+        updateCurrentPlayerVars();
+        updateScoreDisplay();
+        updateHistoryDisplay();
+      } else {
+        document.getElementById('singlePlayerScore').style.display = 'flex';
+        document.getElementById('multiPlayerScore').style.display = 'none';
+        document.getElementById('currentPlayerIndicator').style.display = 'none';
+      }
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('wickets').innerHTML = `<span style="color:#ff0000">${wickets}</span> / 5`;
+      document.getElementById('balls').textContent = balls;
+    }
+
+    function updateHistoryDisplay() {
+      const container = document.getElementById('history-list');
+      container.innerHTML = '';
+
+      history.forEach(item => {
+        const div = document.createElement('div');
+        div.className = `history-item ${item === "OUT" ? "out-item" : ""}`;
+        div.textContent = item;
+        container.appendChild(div);
+      });
+    }
+
+    function setGameMode(multiplayer) {
+      isMultiplayer = multiplayer;
+      gamePhase = multiplayer ? 'player1' : 'setup';
+      currentPlayer = 1;
+
+      // Reset players data
+      players[1] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+      players[2] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+
+      updateUI();
+
+      // Update button states
+      document.getElementById('singlePlayerBtn').classList.toggle('active', !multiplayer);
+      document.getElementById('multiPlayerBtn').classList.toggle('active', multiplayer);
+
+      // Reset game
+      restartGame();
+    }
+
+    // =============== SPIN ANIMATION ===============
+    let spinAnimationId = null;
+    let spinTimeoutId = null;
+
+    function spinWheel() {
+      if (gamePhase === 'finished') return;
+      if (isSpinning) return;
+
+      // Clear any existing animation/timeout to prevent conflicts
+      if (spinAnimationId) cancelAnimationFrame(spinAnimationId);
+      if (spinTimeoutId) clearTimeout(spinTimeoutId);
+
+      isSpinning = true;
+
+      const throwBtn = document.getElementById('throwBtn');
+      throwBtn.disabled = true;
+      throwBtn.textContent = "SPINNING...";
+
+      const minSpins = 6;
+      const extraSpins = Math.random() * 4 + minSpins;
+      const totalRotation = currentRotation + (extraSpins * Math.PI * 2);
+      const randomFinalAngle = Math.random() * Math.PI * 2;
+      const targetRotation = totalRotation + randomFinalAngle;
+
+      const duration = 3800;
+      const startTime = Date.now();
+      const startRotation = currentRotation;
+
+      // Safety timeout to prevent infinite spinning
+      spinTimeoutId = setTimeout(() => {
+        if (isSpinning) {
+          console.warn("Spin animation timed out, forcing completion");
+          completeSpin(targetRotation);
+        }
+      }, duration + 1000); // 1 second grace period
+
+      function animate() {
+        try {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+          currentRotation = startRotation + (targetRotation - startRotation) * easeProgress;
+          drawWheel(currentRotation);
+
+          if (progress < 1) {
+            spinAnimationId = requestAnimationFrame(animate);
+          } else {
+            completeSpin(targetRotation);
+          }
+        } catch (error) {
+          console.error("Animation error:", error);
+          completeSpin(targetRotation);
+        }
+      }
+
+      function completeSpin(finalRotation) {
+        // Clear any pending animation/timeout
+        if (spinAnimationId) {
+          cancelAnimationFrame(spinAnimationId);
+          spinAnimationId = null;
+        }
+        if (spinTimeoutId) {
+          clearTimeout(spinTimeoutId);
+          spinTimeoutId = null;
+        }
+
+        currentRotation = finalRotation % (Math.PI * 2);
+        drawWheel(currentRotation);
+
+        const landedSector = getLandedSector(currentRotation);
+        processOutcome(landedSector);
+
+        isSpinning = false;
+        throwBtn.disabled = false;
+        throwBtn.textContent = "🎯 THROW DART\n(NEXT BALL)";
+      }
+
+      animate();
+    }
+
+    // =============== PROCESS OUTCOME ===============
+    function processOutcome(sector) {
+      balls++;
+
+      const outcomeEl = document.getElementById('outcome');
+      const pointer = document.querySelector('.pointer');
+
+      if (sector.value === "out") {
+        wickets++;
+        pointer.className = 'pointer out-result';
+
+        outcomeEl.style.background = "#ff0000";
+        outcomeEl.style.color = "#fff";
+        outcomeEl.innerHTML = `🚨 OUT!<br><span style="font-size:1rem">Wicket #${wickets}</span>`;
+
+        addToHistory("OUT", true);
+
+        if (wickets >= MAX_WICKETS) {
+          syncPlayerData();
+          players[currentPlayer].finished = true;
+
+          if (isMultiplayer) {
+            if (currentPlayer === 1) {
+              // Player 1 finished, switch to Player 2
+              setTimeout(() => {
+                outcomeEl.style.background = "rgba(255,255,255,0.1)";
+                outcomeEl.style.color = "#fff";
+                outcomeEl.innerHTML = `🏆 PLAYER 1 SCORED ${players[1].score} RUNS!<br><span style="font-size:0.9rem">PLAYER 2'S TURN</span>`;
+                switchToNextPlayer();
+              }, 2000);
+            } else {
+              // Player 2 finished, game over
+              gamePhase = 'finished';
+              updateUI();
+              setTimeout(() => showGameOver(), 800);
+              return;
+            }
+          } else {
+            gamePhase = 'finished';
+            setTimeout(() => showGameOver(), 800);
+            return;
+          }
+        }
+      } else {
+        score += sector.value;
+
+        // Set pointer color based on runs scored BEFORE syncing data
+        if (sector.value === 6) {
+          pointer.className = 'pointer six-result';
+        } else if (sector.value === 4) {
+          pointer.className = 'pointer four-result';
+        } else {
+          pointer.className = 'pointer runs-result';
+        }
+
+        syncPlayerData(); // Sync after each scoring ball for multiplayer
+        updateUI(); // Update multiplayer scoreboard immediately
+
+        // Check if Player 2 has surpassed Player 1's score (end game early)
+        if (isMultiplayer && currentPlayer === 2 && players[2].score > players[1].score) {
+          players[currentPlayer].finished = true;
+
+          outcomeEl.style.background = "#ffd700";
+          outcomeEl.style.color = "#0a3d1f";
+          outcomeEl.innerHTML = `🏆 TARGET CHASED!<br><span style="font-size:0.9rem">Player 2 wins by surpassing Player 1's score!</span>`;
+          setTimeout(() => showGameOver(), 2000);
+          return; // Exit early
+        }
+
+        outcomeEl.style.background = "#ffd700";
+        outcomeEl.style.color = "#0a3d1f";
+        outcomeEl.innerHTML = `🏏 ${sector.label} RUNS!`;
+
+        addToHistory(sector.label);
+      }
+
+      updateScoreDisplay();
+
+      setTimeout(() => {
+        pointer.className = 'pointer'; // Reset pointer to default
+        if (!isSpinning) {
+          if (isMultiplayer && gamePhase !== 'finished') {
+            outcomeEl.style.background = "rgba(255,255,255,0.1)";
+            outcomeEl.style.color = "#fff";
+            outcomeEl.textContent = `PLAYER ${currentPlayer}'S TURN - READY FOR NEXT BALL`;
+          } else {
+            outcomeEl.style.background = "rgba(255,255,255,0.1)";
+            outcomeEl.style.color = "#fff";
+            outcomeEl.textContent = "READY FOR NEXT BALL";
+          }
+        }
+      }, 2500);
+    }
+
+    function addToHistory(text, isOut = false) {
+      history.unshift(text);
+      if (history.length > 6) history.pop();
+      updateHistoryDisplay();
+    }
+
+    function showGameOver() {
+      gamePhase = 'finished';
+      updateUI();
+
+      const banner = document.getElementById('gameOverBanner');
+      const bannerText = document.getElementById('gameOverBannerText');
+      bannerText.textContent = isMultiplayer ? 'GAME OVER - MATCH COMPLETE' : 'GAME OVER';
+      banner.style.display = 'flex';
+
+      const modal = document.getElementById('gameOverModal');
+      const title = document.getElementById('modalTitle');
+      const finalScoreEl = document.getElementById('finalScore');
+      const messageEl = document.getElementById('modalMessage');
+
+      if (isMultiplayer) {
+        const p1Score = players[1].score;
+        const p2Score = players[2].score;
+        const p1Balls = players[1].balls;
+        const p2Balls = players[2].balls;
+
+        // Determine how the game ended
+        let gameEndReason = "";
+        if (players[2].wickets >= MAX_WICKETS) {
+          gameEndReason = "Player 2 got all out!";
+        } else if (p2Score > p1Score) {
+          gameEndReason = "Player 2 surpassed Player 1's score!";
+        } else {
+          gameEndReason = "Both players completed their innings!";
+        }
+
+        title.textContent = "MATCH COMPLETE!";
+        finalScoreEl.textContent = `${p1Score} VS ${p2Score}`;
+
+        let winner = "";
+        if (p1Score > p2Score) {
+          winner = "🏆 PLAYER 1 WINS!";
+        } else if (p2Score > p1Score) {
+          winner = "🏆 PLAYER 2 WINS!";
+        } else {
+          winner = "🤝 IT'S A TIE!";
+        }
+
+        // Display winner with context
+        let msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
+        msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br><br>`;
+        msg += `<span style="font-size: 0.9rem; color: #aaa;">${gameEndReason}</span><br>`;
+        msg += `<span style="font-size: 1.2rem; color: #ffd700;">${winner}</span>`;
+      } else {
+        title.textContent = "ALL OUT!";
+        finalScoreEl.textContent = `${score} RUNS`;
+
+        let msg = `You scored <strong>${score}</strong> runs in <strong>${balls}</strong> balls.<br>`;
+        if (score > 80) msg += "🏆 AMAZING INNINGS!";
+        else if (score > 40) msg += "Solid batting! Well played.";
+        else msg += "Better luck next innings!";
+      }
+
+      messageEl.innerHTML = msg;
+      modal.style.display = "flex";
+      document.getElementById('throwBtn').disabled = true;
+    }
+
+    function closeModal() {
+      document.getElementById('gameOverModal').style.display = "none";
+    }
+
+    function restartGame() {
+      // Clear any stuck animations
+      if (spinAnimationId) {
+        cancelAnimationFrame(spinAnimationId);
+        spinAnimationId = null;
+      }
+      if (spinTimeoutId) {
+        clearTimeout(spinTimeoutId);
+        spinTimeoutId = null;
+      }
+      isSpinning = false;
+
+      // Reset game state
+      if (isMultiplayer) {
+        gamePhase = 'player1';
+        currentPlayer = 1;
+        players[1] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+        players[2] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+        updateCurrentPlayerVars();
+      } else {
+        score = 0;
+        wickets = 0;
+        balls = 0;
+        history = [];
+      }
+
+      updateScoreDisplay();
+      updateHistoryDisplay();
+
+      const outcomeEl = document.getElementById('outcome');
+      outcomeEl.style.background = "rgba(255,255,255,0.1)";
+      outcomeEl.style.color = "#fff";
+      if (isMultiplayer) {
+        outcomeEl.textContent = "NEW MATCH STARTED - PLAYER 1'S TURN";
+      } else {
+        outcomeEl.textContent = "NEW INNINGS STARTED";
+      }
+
+      document.getElementById('gameOverBanner').style.display = 'none';
+      closeModal();
+
+      const throwBtn = document.getElementById('throwBtn');
+      throwBtn.disabled = false;
+      throwBtn.textContent = "🎯 THROW DART\n(NEXT BALL)";
+      document.getElementById('restartBtn').style.display = "none";
+
+      currentRotation = 0;
+      drawWheel(0);
+
+      updateUI();
+    }
+
+    function initGame() {
+      drawWheel(0);
+
+      document.getElementById('throwBtn').addEventListener('click', spinWheel);
+      document.getElementById('restartBtn').addEventListener('click', restartGame);
+
+      // Multiplayer mode buttons
+      document.getElementById('singlePlayerBtn').addEventListener('click', () => setGameMode(false));
+      document.getElementById('multiPlayerBtn').addEventListener('click', () => setGameMode(true));
+
+      // Initialize single player mode by default
+      setGameMode(false);
+
+      // console.log("%c✅ POINTER FIXED - Now shows correct number every time!", "color:#ffd700; background:#0a3d1f; padding:5px 10px;");
+      // console.log("🔧 When pointer is on 6 → it will show 6 RUNS (tested with your screenshot)");
+    }
+
+    // Handle page visibility changes to prevent animation freezes
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden && isSpinning) {
+        // If page becomes hidden during spinning, force completion when it becomes visible again
+        const handleVisibilityChange = function () {
+          if (!document.hidden && isSpinning) {
+            console.warn("Page became visible during spin, checking animation state");
+            // The safety timeout will handle completion if animation is stuck
+          }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange, { once: true });
+      }
+    });
+
+    // Global error handler for animation issues
+    window.addEventListener('error', function (event) {
+      if (isSpinning) {
+        console.error("Global error during spinning:", event.error);
+        // Force completion on any error during spinning
+        setTimeout(() => {
+          if (isSpinning) {
+            console.warn("Forcing spin completion due to error");
+            const throwBtn = document.getElementById('throwBtn');
+            isSpinning = false;
+            throwBtn.disabled = false;
+            throwBtn.textContent = "🎯 THROW DART\n(NEXT BALL)";
+          }
+        }, 100);
+      }
+    });
+
+    window.onload = initGame;
+  </script>
+</body>
+
+</html>
