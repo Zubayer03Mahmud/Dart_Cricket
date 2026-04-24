@@ -9,6 +9,7 @@
 </head>
 
 <body>
+
   <!-- Navbar -->
   <nav class="navbar">
     <a href="/index.html" class="navbar-logo">🏏 DART CRICKET</a>
@@ -18,6 +19,8 @@
       </div>
     </div>
     <div class="navbar-buttons">
+      <button class="navbar-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙
+        DARK</button>
       <button class="navbar-btn" id="authBtn" onclick="goToAuth()">👤 LOGIN</button>
       <button class="navbar-btn" id="logoutBtn" onclick="logout()" style="display: none;">🚪 LOGOUT</button>
     </div>
@@ -120,6 +123,25 @@
     </div>
   </div>
 
+  <!-- WICKET SELECTION MODAL (MULTIPLAYER) -->
+  <div id="wicketSelectionModal" class="modal">
+    <div class="modal-content">
+      <h2 style="font-size: 1.8rem; margin-bottom: 30px;">⚙️ SELECT GAME MODE</h2>
+      <p style="font-size: 1rem; margin-bottom: 30px; opacity: 0.9;">Choose how many wickets to play with:</p>
+
+      <div style="display: flex; gap: 30px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+        <button onclick="selectWickets(3)" class="wicket-btn"
+          style="background: linear-gradient(90deg, #4caf50, #45a049); padding: 30px 40px; font-size: 1.2rem; border-radius: 12px; color: white; border: 3px solid #45a049; cursor: pointer; transition: all 0.3s;">
+          🏏 3 WICKET GAME
+        </button>
+        <button onclick="selectWickets(5)" class="wicket-btn"
+          style="background: linear-gradient(90deg, #2196f3, #1976d2); padding: 30px 40px; font-size: 1.2rem; border-radius: 12px; color: white; border: 3px solid #1976d2; cursor: pointer; transition: all 0.3s;">
+          🏏 5 WICKET GAME
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- GAME OVER MODAL -->
   <div id="gameOverModal" class="modal">
     <div class="modal-content">
@@ -138,11 +160,44 @@
   </div>
 
   <script>
+    // =============== THEME TOGGLE ===============
+    function initTheme() {
+      const savedTheme = localStorage.getItem('dartCricketTheme') || 'dark';
+      applyTheme(savedTheme);
+      updateThemeButton(savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.classList.contains('light-theme') ? 'light' : 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('dartCricketTheme', newTheme);
+      updateThemeButton(newTheme);
+    }
+
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        document.documentElement.classList.add('light-theme');
+      } else {
+        document.documentElement.classList.remove('light-theme');
+      }
+    }
+
+    function updateThemeButton(theme) {
+      const btn = document.getElementById('themeToggle');
+      if (theme === 'light') {
+        btn.textContent = '☀️ LIGHT';
+      } else {
+        btn.textContent = '🌙 DARK';
+      }
+    }
+
     // =============== AUTHENTICATION ===============
     let currentUser = null;
 
     // Initialize - check if user is logged in
     window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
       const user = localStorage.getItem('currentUser');
       if (user) {
         currentUser = JSON.parse(user);
@@ -194,6 +249,7 @@
     let isMultiplayer = false;
     let currentPlayer = 1; // 1 or 2
     let gamePhase = 'setup'; // 'setup', 'player1', 'player2', 'finished'
+    let MAX_WICKETS = 5; // Configurable - will be set based on game selection
 
     // Player data
     let players = {
@@ -217,7 +273,6 @@
     let score = 0;
     let wickets = 0;
     let balls = 0;
-    const MAX_WICKETS = 5;
     let history = [];
 
     // Canvas setup
@@ -358,9 +413,9 @@
 
         // Update player scores
         document.getElementById('player1Score').textContent = players[1].score;
-        document.getElementById('player1Wickets').innerHTML = `<span style="color:#ff0000">${players[1].wickets}</span>/5`;
+        document.getElementById('player1Wickets').innerHTML = `<span style="color:#ff0000">${players[1].wickets}</span>/${MAX_WICKETS}`;
         document.getElementById('player2Score').textContent = players[2].score;
-        document.getElementById('player2Wickets').innerHTML = `<span style="color:#ff0000">${players[2].wickets}</span>/5`;
+        document.getElementById('player2Wickets').innerHTML = `<span style="color:#ff0000">${players[2].wickets}</span>/${MAX_WICKETS}`;
 
         // Update current player indicator
         if (gamePhase === 'player1') {
@@ -389,7 +444,7 @@
 
     function updateScoreDisplay() {
       document.getElementById('score').textContent = score;
-      document.getElementById('wickets').innerHTML = `<span style="color:#ff0000">${wickets}</span> / 5`;
+      document.getElementById('wickets').innerHTML = `<span style="color:#ff0000">${wickets}</span> / ${MAX_WICKETS}`;
       document.getElementById('balls').textContent = balls;
     }
 
@@ -406,8 +461,39 @@
     }
 
     function setGameMode(multiplayer) {
-      isMultiplayer = multiplayer;
-      gamePhase = multiplayer ? 'player1' : 'setup';
+      if (multiplayer) {
+        // Show wicket selection modal for multiplayer
+        document.getElementById('wicketSelectionModal').style.display = 'flex';
+      } else {
+        // Single player mode
+        isMultiplayer = false;
+        gamePhase = 'setup';
+        currentPlayer = 1;
+        MAX_WICKETS = 5; // Single player always 5 wickets
+
+        // Reset players data
+        players[1] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+        players[2] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+
+        updateUI();
+
+        // Update button states
+        document.getElementById('singlePlayerBtn').classList.add('active');
+        document.getElementById('multiPlayerBtn').classList.remove('active');
+
+        // Reset game
+        restartGame();
+      }
+    }
+
+    function selectWickets(wickets) {
+      // Close wicket selection modal
+      document.getElementById('wicketSelectionModal').style.display = 'none';
+
+      // Set up multiplayer mode with selected wickets
+      isMultiplayer = true;
+      MAX_WICKETS = wickets;
+      gamePhase = 'player1';
       currentPlayer = 1;
 
       // Reset players data
@@ -417,8 +503,11 @@
       updateUI();
 
       // Update button states
-      document.getElementById('singlePlayerBtn').classList.toggle('active', !multiplayer);
-      document.getElementById('multiPlayerBtn').classList.toggle('active', multiplayer);
+      document.getElementById('singlePlayerBtn').classList.remove('active');
+      document.getElementById('multiPlayerBtn').classList.add('active');
+
+      // Update subtitle to show selected game mode
+      document.querySelector('.subtitle').textContent = `${wickets} WICKETS = ALL OUT`;
 
       // Reset game
       restartGame();
@@ -730,8 +819,21 @@
       document.getElementById('restartBtn').addEventListener('click', restartGame);
 
       // Multiplayer mode buttons
-      document.getElementById('singlePlayerBtn').addEventListener('click', () => setGameMode(false));
+      document.getElementById('singlePlayerBtn').addEventListener('click', () => {
+        // Reset subtitle for single player
+        document.querySelector('.subtitle').textContent = '5 WICKETS = ALL OUT';
+        setGameMode(false);
+      });
       document.getElementById('multiPlayerBtn').addEventListener('click', () => setGameMode(true));
+
+      // Close wicket selection modal on backdrop click
+      document.getElementById('wicketSelectionModal').addEventListener('click', (e) => {
+        if (e.target.id === 'wicketSelectionModal') {
+          document.getElementById('wicketSelectionModal').style.display = 'none';
+          // Reset multiplayer button state if modal was closed without selection
+          document.getElementById('multiPlayerBtn').classList.remove('active');
+        }
+      });
 
       // Initialize single player mode by default
       setGameMode(false);

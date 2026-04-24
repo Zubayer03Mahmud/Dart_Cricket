@@ -2,6 +2,28 @@
 
 :root {
   --cricket-green: #0a3d1f;
+  --bg-gradient-start: #0a3d1f;
+  --bg-gradient-end: #1a5f3a;
+  --text-color: white;
+  --primary-gold: #ffd700;
+  --navbar-bg: rgba(10, 61, 31, 0.95);
+  --border-color: rgba(255, 215, 0, 0.3);
+  --scoreboard-bg: rgba(0, 0, 0, 0.85);
+  --score-item-bg: #111;
+  --shadow-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Light Theme */
+body.light-theme {
+  --bg-gradient-start: #f5f5f5;
+  --bg-gradient-end: #e8f5e9;
+  --text-color: #1a1a1a;
+  --primary-gold: #ff9800;
+  --navbar-bg: rgba(245, 245, 245, 0.95);
+  --border-color: rgba(255, 152, 0, 0.3);
+  --scoreboard-bg: rgba(255, 255, 255, 0.95);
+  --score-item-bg: #f0f0f0;
+  --shadow-color: rgba(0, 0, 0, 0.2);
 }
 
 * {
@@ -11,16 +33,24 @@
 }
 
 body {
-  background: linear-gradient(180deg, #0a3d1f 0%, #1a5f3a 100%);
-  color: white;
+  background: linear-gradient(
+    180deg,
+    var(--bg-gradient-start) 0%,
+    var(--bg-gradient-end) 100%
+  );
+  color: var(--text-color);
   font-family: 'Press Start 2P', system-ui;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   padding-top: 0;
   position: relative;
   overflow-x: hidden;
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 body::before {
@@ -42,22 +72,24 @@ body::before {
 /* Navbar */
 .navbar {
   z-index: 100;
-  background: rgba(10, 61, 31, 0.95);
+  background: var(--navbar-bg);
   padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  border-bottom: 2px solid var(--border-color);
   backdrop-filter: blur(10px);
   width: 100%;
+  transition: background 0.3s ease;
 }
 
 .navbar-logo {
   font-size: 14px;
-  color: #ffd700;
+  color: var(--primary-gold);
   text-decoration: none;
   text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
   letter-spacing: 1px;
+  transition: color 0.3s ease;
 }
 
 .navbar-info {
@@ -69,6 +101,7 @@ body::before {
 .user-info {
   font-size: 10px;
   color: #a8d5ba;
+  transition: color 0.3s ease;
 }
 
 .navbar-buttons {
@@ -80,8 +113,8 @@ body::before {
 .navbar-btn {
   padding: 8px 16px;
   background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  color: var(--primary-gold);
+  border: 2px solid var(--border-color);
   border-radius: 6px;
   cursor: pointer;
   font-size: 10px;
@@ -94,15 +127,17 @@ body::before {
 
 .navbar-btn:hover {
   background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
+  border-color: var(--primary-gold);
   transform: translateY(-2px);
 }
 
 h1 {
   font-size: 2.2rem;
-  text-shadow: 0 0 15px #ffd700;
+  text-shadow: 0 0 15px var(--primary-gold);
   margin-bottom: 8px;
   letter-spacing: 4px;
+  color: var(--primary-gold);
+  transition: color 0.3s ease;
 }
 
 .subtitle {
@@ -111,15 +146,24 @@ h1 {
   letter-spacing: 2px;
 }
 
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+  margin-top: 20px;
+}
+
 .game-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 25px;
+  gap: 80px;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   max-width: 1100px;
   width: 100%;
   z-index: 2;
+  padding: 0 20px;
 }
 
 .wheel-container {
@@ -234,14 +278,17 @@ canvas {
 }
 
 .scoreboard {
-  background: rgba(0, 0, 0, 0.85);
-  border: 8px solid #ffd700;
+  background: var(--scoreboard-bg);
+  border: 8px solid var(--primary-gold);
   border-radius: 15px;
   padding: 25px;
   min-width: 320px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px var(--shadow-color);
   flex: 1;
   max-width: 400px;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .score-box {
@@ -249,9 +296,12 @@ canvas {
   justify-content: space-between;
   margin-bottom: 20px;
   padding: 15px;
-  background: #111;
+  background: var(--score-item-bg);
   border-radius: 10px;
-  border: 3px solid #ffd700;
+  border: 3px solid var(--primary-gold);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .score-item {
@@ -262,13 +312,15 @@ canvas {
   font-size: 0.7rem;
   opacity: 0.8;
   letter-spacing: 1px;
+  color: var(--text-color);
 }
 
 .score-value {
   font-size: 2.5rem;
   font-weight: bold;
-  color: #ffd700;
-  text-shadow: 0 0 10px #ffd700;
+  color: var(--primary-gold);
+  text-shadow: 0 0 10px var(--primary-gold);
+  transition: color 0.3s ease;
 }
 
 .wickets {
@@ -287,6 +339,7 @@ canvas {
   border-radius: 10px;
   transition: all 0.3s;
   text-shadow: 0 0 10px currentColor;
+  color: var(--text-color);
 }
 
 .game-over-banner {
@@ -297,7 +350,7 @@ canvas {
   margin: 12px 0;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #ffd700;
+  color: var(--primary-gold);
   background: rgba(255, 215, 0, 0.08);
   border: 2px solid rgba(255, 215, 0, 0.9);
   border-radius: 12px;
@@ -306,6 +359,7 @@ canvas {
   text-transform: uppercase;
   text-align: center;
   animation: glow-banner 1.6s ease-in-out infinite alternate;
+  transition: color 0.3s ease;
 }
 
 @keyframes glow-banner {
@@ -333,11 +387,12 @@ button {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 2px;
+  color: var(--text-color);
 }
 
 #throwBtn {
-  background: linear-gradient(90deg, #ffd700, #ffaa00);
-  color: #0a3d1f;
+  background: linear-gradient(90deg, var(--primary-gold), #ffaa00);
+  color: var(--text-color);
   font-weight: bold;
   box-shadow: 0 8px 0 #b38b00;
 }
@@ -366,6 +421,7 @@ button {
   font-size: 0.8rem;
   margin-bottom: 8px;
   opacity: 0.8;
+  color: var(--text-color);
 }
 
 .history-list {
@@ -383,6 +439,10 @@ button {
   font-size: 0.85rem;
   white-space: nowrap;
   box-shadow: 0 2px 0 #111;
+  color: var(--text-color);
+  transition:
+    background 0.3s ease,
+    color 0.3s ease;
 }
 
 .out-item {
@@ -398,6 +458,7 @@ button {
   text-align: center;
   z-index: 2;
   max-width: 800px;
+  color: var(--text-color);
 }
 
 .modal {
@@ -414,19 +475,51 @@ button {
 }
 
 .modal-content {
-  background: #0a3d1f;
-  border: 10px solid #ffd700;
+  background: var(--bg-gradient-start);
+  border: 10px solid var(--primary-gold);
   padding: 40px 50px;
   text-align: center;
   border-radius: 20px;
   max-width: 90%;
-  box-shadow: 0 0 40px #ffd700;
+  box-shadow: 0 0 40px var(--primary-gold);
+  color: var(--text-color);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
 
 .modal h2 {
   font-size: 2rem;
   margin-bottom: 20px;
-  color: #ffd700;
+  color: var(--primary-gold);
+  transition: color 0.3s ease;
+}
+
+/* Wicket Selection Buttons */
+.wicket-btn {
+  font-family: 'Press Start 2P', system-ui;
+  background: linear-gradient(90deg, #4caf50, #45a049) !important;
+  color: white !important;
+  padding: 30px 40px !important;
+  font-size: 1.2rem !important;
+  border-radius: 12px !important;
+  border: 3px solid #45a049 !important;
+  cursor: pointer;
+  transition: all 0.3s ease !important;
+  letter-spacing: 2px;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+  text-transform: uppercase;
+}
+
+.wicket-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 rgba(0, 0, 0, 0.4);
+}
+
+.wicket-btn:active {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
 }
 
 @keyframes bounce {
@@ -450,8 +543,8 @@ button {
 .mode-btn {
   padding: 10px 20px;
   background: rgba(255, 215, 0, 0.1);
-  color: #ffd700;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  color: var(--primary-gold);
+  border: 2px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.7rem;
@@ -464,13 +557,13 @@ button {
 
 .mode-btn:hover {
   background: rgba(255, 215, 0, 0.2);
-  border-color: #ffd700;
+  border-color: var(--primary-gold);
   transform: translateY(-2px);
 }
 
 .mode-btn.active {
   background: rgba(255, 215, 0, 0.3);
-  border-color: #ffd700;
+  border-color: var(--primary-gold);
   box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
 
@@ -488,14 +581,16 @@ button {
   padding: 10px;
   background: rgba(0, 0, 0, 0.3);
   border-radius: 8px;
-  border: 2px solid rgba(255, 215, 0, 0.2);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 .player-name {
   font-size: 0.8rem;
-  color: #ffd700;
+  color: var(--primary-gold);
   margin-bottom: 8px;
-  text-shadow: 0 0 8px #ffd700;
+  text-shadow: 0 0 8px var(--primary-gold);
+  transition: color 0.3s ease;
 }
 
 .player-stats {
@@ -506,10 +601,11 @@ button {
 .vs-divider {
   text-align: center;
   font-size: 1.2rem;
-  color: #ffd700;
-  text-shadow: 0 0 10px #ffd700;
+  color: var(--primary-gold);
+  text-shadow: 0 0 10px var(--primary-gold);
   margin: 10px 0;
   font-weight: bold;
+  transition: color 0.3s ease;
 }
 
 .current-player {
@@ -518,7 +614,8 @@ button {
   padding: 10px;
   background: rgba(255, 215, 0, 0.1);
   border-radius: 8px;
-  border: 2px solid rgba(255, 215, 0, 0.3);
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
 }
 
 #currentPlayerText {
@@ -572,13 +669,22 @@ button {
   }
 
   .header {
-    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 32px;
     padding: 15px 10px;
   }
 
   .game-container {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
+    gap: 25px;
+    max-width: 1100px;
+    width: 100%;
+    z-index: 2;
+    min-height: 60vh;
     padding: 10px;
   }
 
@@ -830,4 +936,30 @@ button {
   #currentPlayerText {
     font-size: 0.75rem;
   }
+}
+
+/* DEFAULT (DARK THEME) */
+:root {
+  --bg-color: #0a3d1f;
+  --text-color: #ffffff;
+  --card-bg: rgba(255, 255, 255, 0.1);
+}
+
+/* LIGHT THEME */
+.light-theme {
+  --bg-color: #f5f5f5;
+  --text-color: #111;
+  --card-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* APPLY VARIABLES */
+body {
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+
+.scoreboard,
+.navbar,
+.modal-content {
+  background: var(--card-bg);
 }
