@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
 const authRoutes = require('./auth');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -9,7 +10,9 @@ const PORT = process.env.PORT || 3000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve static files
+// Serve static files explicitly
+app.use('/css', express.static(path.join(__dirname, 'style.css')));
+app.use('/js', express.static(path.join(__dirname, 'auth.js')));
 app.use(express.static(path.join(__dirname)));
 
 // Routes
