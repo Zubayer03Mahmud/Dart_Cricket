@@ -13,16 +13,9 @@
   <!-- Navbar -->
   <nav class="navbar">
     <a href="/index.html" class="navbar-logo">🏏 DART CRICKET</a>
-    <div class="navbar-info">
-      <div class="user-info" id="userInfo" style="display: none;">
-        👤 <span id="userName">User</span>
-      </div>
-    </div>
     <div class="navbar-buttons">
       <button class="navbar-btn" id="themeToggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">🌙
         DARK</button>
-      <button class="navbar-btn" id="authBtn" onclick="goToAuth()">👤 LOGIN</button>
-      <button class="navbar-btn" id="logoutBtn" onclick="logout()" style="display: none;">🚪 LOGOUT</button>
     </div>
   </nav>
 
@@ -37,7 +30,7 @@
 
   <div class="game-container">
     <!-- WHEEL -->
-    <div class="wheel-container">
+    <div class="wheel-container" style="margin-bottom: 10px;">
       <canvas id="wheel" width="620" height="620"></canvas>
       <!-- Bigger, brighter pointer (exactly like your new screenshot) -->
       <div class="pointer"></div>
@@ -93,6 +86,20 @@
             </div>
           </div>
         </div>
+        <div class="vs-divider" id="vsDivider23" style="display: none;">VS</div>
+        <div class="player-section" id="player3Section" style="display: none;">
+          <div class="player-name" id="player3Name">PLAYER 3</div>
+          <div class="player-stats">
+            <div class="score-item">
+              <div class="score-label">RUNS</div>
+              <div id="player3Score" class="score-value">0</div>
+            </div>
+            <div class="score-item">
+              <div class="score-label">WICKETS</div>
+              <div id="player3Wickets" class="score-value wickets">0/5</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="currentPlayerIndicator" class="current-player" style="display: none;">
@@ -119,6 +126,25 @@
       <div style="margin-top: 25px; font-size: 0.75rem; opacity: 0.7; text-align: center; line-height: 1.4;">
         INSPIRED BY MY HAND-DRAWN WHEEL<br>
         4 • 3 • 1 • 2 • 6 • OUT • 2 • OUT
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAYER COUNT SELECTION MODAL (MULTIPLAYER) -->
+  <div id="playerCountModal" class="modal">
+    <div class="modal-content">
+      <h2 style="font-size: 1.8rem; margin-bottom: 30px;">👥 MULTIPLAYER SETUP</h2>
+      <p style="font-size: 1rem; margin-bottom: 30px; opacity: 0.9;">Choose number of players:</p>
+
+      <div style="display: flex; gap: 30px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;">
+        <button onclick="selectPlayerCount(2)" class="wicket-btn"
+          style="background: linear-gradient(90deg, #4caf50, #45a049); padding: 30px 40px; font-size: 1.2rem; border-radius: 12px; color: white; border: 3px solid #45a049; cursor: pointer; transition: all 0.3s;">
+          👤 2 PLAYERS
+        </button>
+        <button onclick="selectPlayerCount(3)" class="wicket-btn"
+          style="background: linear-gradient(90deg, #2196f3, #1976d2); padding: 30px 40px; font-size: 1.2rem; border-radius: 12px; color: white; border: 3px solid #1976d2; cursor: pointer; transition: all 0.3s;">
+          👥 3 PLAYERS
+        </button>
       </div>
     </div>
   </div>
@@ -192,41 +218,10 @@
       }
     }
 
-    // =============== AUTHENTICATION ===============
-    let currentUser = null;
-
-    // Initialize - check if user is logged in
+    // Initialize theme
     window.addEventListener('DOMContentLoaded', () => {
       initTheme();
-      const user = localStorage.getItem('currentUser');
-      if (user) {
-        currentUser = JSON.parse(user);
-        updateAuthUI();
-      }
     });
-
-    function updateAuthUI() {
-      if (currentUser) {
-        document.getElementById('userInfo').style.display = 'inline-block';
-        document.getElementById('userName').textContent = currentUser.username;
-        document.getElementById('authBtn').style.display = 'none';
-        document.getElementById('logoutBtn').style.display = 'inline-block';
-      } else {
-        document.getElementById('userInfo').style.display = 'none';
-        document.getElementById('authBtn').style.display = 'inline-block';
-        document.getElementById('logoutBtn').style.display = 'none';
-      }
-    }
-
-    function goToAuth() {
-      window.location.href = '/auth.html';
-    }
-
-    function logout() {
-      localStorage.removeItem('currentUser');
-      currentUser = null;
-      location.reload();
-    }
 
     // =============== SECTORS - EXACT MATCH TO YOUR ORIGINAL DRAWING ===============
     const sectors = [
@@ -247,7 +242,8 @@
 
     // Game state
     let isMultiplayer = false;
-    let currentPlayer = 1; // 1 or 2
+    let playerCount = 2; // 2 or 3 players
+    let currentPlayer = 1; // 1, 2, or 3
     let gamePhase = 'setup'; // 'setup', 'player1', 'player2', 'finished'
     let MAX_WICKETS = 5; // Configurable - will be set based on game selection
 
@@ -261,6 +257,13 @@
         finished: false
       },
       2: {
+        score: 0,
+        wickets: 0,
+        balls: 0,
+        history: [],
+        finished: false
+      },
+      3: {
         score: 0,
         wickets: 0,
         balls: 0,
@@ -333,11 +336,11 @@
       // Center circle
       ctx.fillStyle = "#111";
       ctx.beginPath();
-      ctx.arc(0, 0, 28, 0, Math.PI * 2);
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#ffd700";
       ctx.beginPath();
-      ctx.arc(0, 0, 18, 0, Math.PI * 2);
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = "#111";
       ctx.font = "bold 22px Arial";
@@ -351,9 +354,9 @@
       ctx.save();
       ctx.translate(CENTER_X, CENTER_Y);
       ctx.strokeStyle = "#3a2a1f";
-      ctx.lineWidth = 22;
+      ctx.lineWidth = 20;
       ctx.beginPath();
-      ctx.arc(0, 0, RADIUS + 18, 0, Math.PI * 2);
+      ctx.arc(0, 0, RADIUS + 16, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
@@ -395,9 +398,9 @@
     function switchToNextPlayer() {
       syncPlayerData();
 
-      if (currentPlayer === 1) {
-        currentPlayer = 2;
-        gamePhase = 'player2';
+      if (currentPlayer < playerCount) {
+        currentPlayer++;
+        gamePhase = 'player' + currentPlayer;
       } else {
         gamePhase = 'finished';
       }
@@ -411,25 +414,48 @@
         document.getElementById('multiPlayerScore').style.display = 'flex';
         document.getElementById('currentPlayerIndicator').style.display = 'block';
 
+        // Show/hide player 3 section based on player count
+        if (playerCount === 3) {
+          document.getElementById('player3Section').style.display = 'block';
+          document.getElementById('vsDivider23').style.display = 'block';
+        } else {
+          document.getElementById('player3Section').style.display = 'none';
+          document.getElementById('vsDivider23').style.display = 'none';
+        }
+
         // Update player scores
         document.getElementById('player1Score').textContent = players[1].score;
         document.getElementById('player1Wickets').innerHTML = `<span style="color:#ff0000">${players[1].wickets}</span>/${MAX_WICKETS}`;
         document.getElementById('player2Score').textContent = players[2].score;
         document.getElementById('player2Wickets').innerHTML = `<span style="color:#ff0000">${players[2].wickets}</span>/${MAX_WICKETS}`;
 
+        if (playerCount === 3) {
+          document.getElementById('player3Score').textContent = players[3].score;
+          document.getElementById('player3Wickets').innerHTML = `<span style="color:#ff0000">${players[3].wickets}</span>/${MAX_WICKETS}`;
+        }
+
         // Update current player indicator
-        if (gamePhase === 'player1') {
-          document.getElementById('currentPlayerText').textContent = "PLAYER 1'S TURN";
-          document.getElementById('player1Name').style.color = '#ffd700';
-          document.getElementById('player2Name').style.color = '#666';
-        } else if (gamePhase === 'player2') {
-          document.getElementById('currentPlayerText').textContent = "PLAYER 2'S TURN";
-          document.getElementById('player1Name').style.color = '#666';
-          document.getElementById('player2Name').style.color = '#ffd700';
+        const playerNames = ['', 'PLAYER 1', 'PLAYER 2', 'PLAYER 3'];
+        const nameColors = { 1: '#ffd700', 2: '#ffd700', 3: '#ffd700' };
+
+        if (gamePhase !== 'finished') {
+          document.getElementById('currentPlayerText').textContent = playerNames[currentPlayer] + "'S TURN";
+
+          // Highlight current player
+          for (let i = 1; i <= playerCount; i++) {
+            const nameEl = document.getElementById('player' + i + 'Name');
+            if (nameEl) {
+              nameEl.style.color = (i === currentPlayer) ? '#ffd700' : '#666';
+            }
+          }
         } else {
           document.getElementById('currentPlayerText').textContent = "GAME FINISHED";
-          document.getElementById('player1Name').style.color = '#ffd700';
-          document.getElementById('player2Name').style.color = '#ffd700';
+          for (let i = 1; i <= playerCount; i++) {
+            const nameEl = document.getElementById('player' + i + 'Name');
+            if (nameEl) {
+              nameEl.style.color = '#ffd700';
+            }
+          }
         }
 
         updateCurrentPlayerVars();
@@ -462,11 +488,12 @@
 
     function setGameMode(multiplayer) {
       if (multiplayer) {
-        // Show wicket selection modal for multiplayer
-        document.getElementById('wicketSelectionModal').style.display = 'flex';
+        // Show player count selection modal for multiplayer
+        document.getElementById('playerCountModal').style.display = 'flex';
       } else {
         // Single player mode
         isMultiplayer = false;
+        playerCount = 2;
         gamePhase = 'setup';
         currentPlayer = 1;
         MAX_WICKETS = 5; // Single player always 5 wickets
@@ -474,6 +501,7 @@
         // Reset players data
         players[1] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
         players[2] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+        players[3] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
 
         updateUI();
 
@@ -484,6 +512,17 @@
         // Reset game
         restartGame();
       }
+    }
+
+    function selectPlayerCount(count) {
+      // Close player count modal
+      document.getElementById('playerCountModal').style.display = 'none';
+
+      // Store player count
+      playerCount = count;
+
+      // Show wicket selection modal
+      document.getElementById('wicketSelectionModal').style.display = 'flex';
     }
 
     function selectWickets(wickets) {
@@ -499,6 +538,9 @@
       // Reset players data
       players[1] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
       players[2] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+      if (playerCount === 3) {
+        players[3] = { score: 0, wickets: 0, balls: 0, history: [], finished: false };
+      }
 
       updateUI();
 
@@ -507,7 +549,7 @@
       document.getElementById('multiPlayerBtn').classList.add('active');
 
       // Update subtitle to show selected game mode
-      document.querySelector('.subtitle').textContent = `${wickets} WICKETS = ALL OUT`;
+      document.querySelector('.subtitle').textContent = `${playerCount} PLAYERS • ${wickets} WICKETS`;
 
       // Reset game
       restartGame();
