@@ -755,32 +755,75 @@
         const p2Score = players[2].score;
         const p1Balls = players[1].balls;
         const p2Balls = players[2].balls;
+        const is3Player = playerCount === 3;
+        const p3Score = is3Player ? players[3].score : 0;
+        const p3Balls = is3Player ? players[3].balls : 0;
 
         // Determine how the game ended
         let gameEndReason = "";
-        if (players[2].wickets >= MAX_WICKETS) {
-          gameEndReason = "Player 2 got all out!";
-        } else if (p2Score > p1Score) {
-          gameEndReason = "Player 2 surpassed Player 1's score!";
+        if (is3Player) {
+          if (players[3].wickets >= MAX_WICKETS) {
+            gameEndReason = "Player 3 got all out!";
+          } else if (p3Score > p2Score && p3Score > p1Score) {
+            gameEndReason = "Player 3 surpassed both players!";
+          } else if (p2Score > p1Score && p2Score > p3Score) {
+            gameEndReason = "Player 2 surpassed Player 1!";
+          } else {
+            gameEndReason = "All players completed their innings!";
+          }
         } else {
-          gameEndReason = "Both players completed their innings!";
+          if (players[2].wickets >= MAX_WICKETS) {
+            gameEndReason = "Player 2 got all out!";
+          } else if (p2Score > p1Score) {
+            gameEndReason = "Player 2 surpassed Player 1's score!";
+          } else {
+            gameEndReason = "Both players completed their innings!";
+          }
         }
 
         title.textContent = "MATCH COMPLETE!";
-        finalScoreEl.textContent = `${p1Score} VS ${p2Score}`;
 
+        // Build winner message for 2 or 3 players
         let winner = "";
-        if (p1Score > p2Score) {
-          winner = "🏆 PLAYER 1 WINS!";
-        } else if (p2Score > p1Score) {
-          winner = "🏆 PLAYER 2 WINS!";
+        let msg = "";
+
+        if (is3Player) {
+          finalScoreEl.textContent = `${p1Score} VS ${p2Score} VS ${p3Score}`;
+
+          // Find the winner(s) for 3 players
+          const scores = [
+            { player: 1, score: p1Score },
+            { player: 2, score: p2Score },
+            { player: 3, score: p3Score }
+          ];
+          scores.sort((a, b) => b.score - a.score);
+
+          if (scores[0].score === scores[1].score && scores[1].score === scores[2].score) {
+            winner = "🤝 IT'S A THREE-WAY TIE!";
+          } else if (scores[0].score === scores[1].score) {
+            winner = `🤝 PLAYERS ${scores[0].player} & ${scores[1].player} TIE!`;
+          } else {
+            winner = `🏆 PLAYER ${scores[0].player} WINS!`;
+          }
+
+          msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
+          msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br>`;
+          msg += `<strong>Player 3:</strong> ${p3Score} runs (${p3Balls} balls)<br><br>`;
         } else {
-          winner = "🤝 IT'S A TIE!";
+          finalScoreEl.textContent = `${p1Score} VS ${p2Score}`;
+
+          if (p1Score > p2Score) {
+            winner = "🏆 PLAYER 1 WINS!";
+          } else if (p2Score > p1Score) {
+            winner = "🏆 PLAYER 2 WINS!";
+          } else {
+            winner = "🤝 IT'S A TIE!";
+          }
+
+          msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
+          msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br><br>`;
         }
 
-        // Display winner with context
-        let msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
-        msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br><br>`;
         msg += `<span style="font-size: 0.9rem; color: #aaa;">${gameEndReason}</span><br>`;
         msg += `<span style="font-size: 1.2rem; color: #ffd700;">${winner}</span>`;
       } else {

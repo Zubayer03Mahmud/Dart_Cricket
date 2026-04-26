@@ -16,8 +16,14 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Dart Cricket Game is LIVE!`);
-  console.log(`🌐 Open http://localhost:${PORT} in your browser`);
-  console.log(` Your original hand-drawn wheel is now a playable game!\n`);
-});
+// Vercel serverless function handler
+module.exports = app;
+
+// Local development server
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Dart Cricket Game is LIVE!`);
+    console.log(`🌐 Open http://localhost:${PORT} in your browser`);
+    console.log(` Your original hand-drawn wheel is now a playable game!\n`);
+  });
+}
