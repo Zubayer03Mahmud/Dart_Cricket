@@ -405,6 +405,11 @@
         gamePhase = 'finished';
       }
 
+      // Check if all players have finished
+      if (gamePhase === 'finished') {
+        setTimeout(() => showGameOver(), 800);
+      }
+
       updateUI();
     }
 
@@ -666,8 +671,16 @@
                 outcomeEl.innerHTML = `🏆 PLAYER 1 SCORED ${players[1].score} RUNS!<br><span style="font-size:0.9rem">PLAYER 2'S TURN</span>`;
                 switchToNextPlayer();
               }, 2000);
+            } else if (currentPlayer === 2 && playerCount === 3) {
+              // Player 2 finished in 3-player mode, switch to Player 3
+              setTimeout(() => {
+                outcomeEl.style.background = "rgba(255,255,255,0.1)";
+                outcomeEl.style.color = "#fff";
+                outcomeEl.innerHTML = `🏆 PLAYER 2 SCORED ${players[2].score} RUNS!<br><span style="font-size:0.9rem">PLAYER 3'S TURN</span>`;
+                switchToNextPlayer();
+              }, 2000);
             } else {
-              // Player 2 finished, game over
+              // Last player finished, game over
               gamePhase = 'finished';
               updateUI();
               setTimeout(() => showGameOver(), 800);
@@ -694,15 +707,17 @@
         syncPlayerData(); // Sync after each scoring ball for multiplayer
         updateUI(); // Update multiplayer scoreboard immediately
 
-        // Check if Player 2 has surpassed Player 1's score (end game early)
-        if (isMultiplayer && currentPlayer === 2 && players[2].score > players[1].score) {
-          players[currentPlayer].finished = true;
-
-          outcomeEl.style.background = "#ffd700";
-          outcomeEl.style.color = "#0a3d1f";
-          outcomeEl.innerHTML = `🏆 TARGET CHASED!<br><span style="font-size:0.9rem">Player 2 wins by surpassing Player 1's score!</span>`;
-          setTimeout(() => showGameOver(), 2000);
-          return; // Exit early
+        // Check if current player has surpassed previous player's score (end game early)
+        // Only for 2-player mode, not for 3-player mode
+        if (isMultiplayer && currentPlayer === 2 && playerCount === 2) {
+          if (players[2].score > players[1].score) {
+            players[currentPlayer].finished = true;
+            outcomeEl.style.background = "#ffd700";
+            outcomeEl.style.color = "#0a3d1f";
+            outcomeEl.innerHTML = `🏆 TARGET CHASED!<br><span style="font-size:0.9rem">Player 2 wins by surpassing Player 1's score!</span>`;
+            setTimeout(() => showGameOver(), 2000);
+            return; // Exit early
+          }
         }
 
         outcomeEl.style.background = "#ffd700";
@@ -799,29 +814,29 @@
           scores.sort((a, b) => b.score - a.score);
 
           if (scores[0].score === scores[1].score && scores[1].score === scores[2].score) {
-            winner = "🤝 IT'S A THREE-WAY TIE!";
+            winner = "🤝 P1 & P2 & P3 - THREE-WAY TIE!";
           } else if (scores[0].score === scores[1].score) {
-            winner = `🤝 PLAYERS ${scores[0].player} & ${scores[1].player} TIE!`;
+            winner = `🤝 P${scores[0].player} & P${scores[1].player} TIE!`;
           } else {
-            winner = `🏆 PLAYER ${scores[0].player} WINS!`;
+            winner = `🏆 P${scores[0].player} WINS WITH ${scores[0].score} RUNS!`;
           }
 
-          msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
-          msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br>`;
-          msg += `<strong>Player 3:</strong> ${p3Score} runs (${p3Balls} balls)<br><br>`;
+          msg = `<strong>P1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
+          msg += `<strong>P2:</strong> ${p2Score} runs (${p2Balls} balls)<br>`;
+          msg += `<strong>P3:</strong> ${p3Score} runs (${p3Balls} balls)<br><br>`;
         } else {
           finalScoreEl.textContent = `${p1Score} VS ${p2Score}`;
 
           if (p1Score > p2Score) {
-            winner = "🏆 PLAYER 1 WINS!";
+            winner = "🏆 P1 WINS!";
           } else if (p2Score > p1Score) {
-            winner = "🏆 PLAYER 2 WINS!";
+            winner = "🏆 P2 WINS!";
           } else {
             winner = "🤝 IT'S A TIE!";
           }
 
-          msg = `<strong>Player 1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
-          msg += `<strong>Player 2:</strong> ${p2Score} runs (${p2Balls} balls)<br><br>`;
+          msg = `<strong>P1:</strong> ${p1Score} runs (${p1Balls} balls)<br>`;
+          msg += `<strong>P2:</strong> ${p2Score} runs (${p2Balls} balls)<br><br>`;
         }
 
         msg += `<span style="font-size: 0.9rem; color: #aaa;">${gameEndReason}</span><br>`;
